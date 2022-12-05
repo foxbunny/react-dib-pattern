@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { Component, useState } from 'react'
 import * as ReactDOM from 'react-dom/client'
 
 let
@@ -34,58 +34,64 @@ let
       <use href={`icons.svg#${iconId}`}></use>
     </svg>
   ),
-  App = () => {
-    let [state, setState] = useState(initState())
+  App = class extends Component {
+    constructor(props) {
+      super(props)
+      this.state = initState()
+    }
 
-    let
-      onReady = ev => setState(setDuration(ev.target.duration)),
-      onUpdatePosition = ev => setState(setPosition(ev.target.currentTime)),
-      onEnded = ev => setState(setPlaybackMode(STOPPED)),
-      onPlayPause = () => setState(setPlaybackMode(PLAYING)),
-      onFastForward = () => state.mode && setState(setPlaybackMode(FAST_FORWARDING)),
-      onStop = () => setState(setPlaybackMode(STOPPED))
+    onReady = ev => this.setState(setDuration(ev.target.duration))
+    onUpdatePosition = ev => this.setState(setPosition(ev.target.currentTime))
+    onEnded = ev => this.setState(setPlaybackMode(STOPPED))
+    onPlayPause = () => this.setState(setPlaybackMode(PLAYING))
+    onFastForward = () => this.state.mode && this.setState(setPlaybackMode(FAST_FORWARDING))
+    onStop = () => this.setState(setPlaybackMode(STOPPED))
 
-    return (
-      <section hidden={!state.duration}>
-        <react-audio playback-state={state.mode}>
-          <audio
-            onTimeUpdate={onUpdatePosition}
-            onEnded={onEnded}
-            onLoadedData={onReady}
-            src="drunk.mp3"></audio>
-        </react-audio>
+    render() {
+      return (
+        <section hidden={!this.state.duration}>
+          <react-audio playback-state={this.state.mode}>
+            <audio
+              onTimeUpdate={this.onUpdatePosition}
+              onEnded={this.onEnded}
+              onLoadedData={this.onReady}
+              src="drunk.mp3"></audio>
+          </react-audio>
 
-        <article id="player">
-          <div
-            id="progress"
-            role="progressbar"
-            aria-valuemax={state.duration}
-            aria-valuenow={state.position}
-            style={{'--position': `${state.position / state.duration * 100}%`}}></div>
+          <article id="player">
+            <div
+              id="progress"
+              role="progressbar"
+              aria-valuemax={this.state.duration}
+              aria-valuenow={this.state.position}
+              style={{ '--position': `${this.state.position / this.state.duration * 100}%` }}></div>
 
-          <div id="controls">
-            <fieldset>
-              <button onClick={onPlayPause} aria-pressed={state.mode !== STOPPED}>
-                <Icon label="play and pause" iconId="play-pause"/>
-              </button>
-              <button onPointerDown={onFastForward}
-                      onPointerUp={onPlayPause}
-                      disabled={state.mode !== PLAYING}>
-                <Icon label="fast forward" iconId="fast-forward"/>
-              </button>
-              <button onClick={onStop}>
-                <Icon label="stop" iconId="stop"/>
-              </button>
-            </fieldset>
-            <span role="status" aria-live="polite">
-              <span id="pause-indicator"
-                    data-active={state.mode === PAUSED}>{state.mode === PAUSED ? 'paused' : 'not paused'}</span>
-              pause
-            </span>
-          </div>
-        </article>
-      </section>
-    )
+            <div id="controls">
+              <fieldset>
+                <button onClick={this.onPlayPause} aria-pressed={this.state.mode !== STOPPED}>
+                  <Icon label="play and pause" iconId="play-pause" />
+                </button>
+                <button onPointerDown={this.onFastForward}
+                        onPointerUp={this.onPlayPause}
+                        disabled={this.state.mode !== PLAYING}>
+                  <Icon label="fast forward" iconId="fast-forward" />
+                </button>
+                <button onClick={this.onStop}>
+                  <Icon label="stop" iconId="stop" />
+                </button>
+              </fieldset>
+              <span role="status" aria-live="polite">
+                <span id="pause-indicator"
+                      data-active={this.state.mode === PAUSED}>
+                  {this.state.mode === PAUSED ? 'paused' : 'not paused'}
+                </span>
+                pause
+              </span>
+            </div>
+          </article>
+        </section>
+      )
+    }
   }
 
 customElements.define('react-audio', class extends HTMLElement {
