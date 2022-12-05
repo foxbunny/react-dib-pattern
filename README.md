@@ -8,10 +8,10 @@ using custom elements.
 It is common that in an otherwise declarative application based around the 
 React state we need to do something imperative. For instance, we may need to 
 interactive with native imperative interfaces like the `HTMLMediaElement` 
-API. Usually, in React applications, the `useEffect` hook is used to embed 
-the imperative code within the component. This unnatural mix of imperative 
-and declarative, however, creates additional complexity (the tension between 
-the two worlds, boilerplate code, etc.).
+API. Usually, in React applications, the `useEffect` and `useRef` hooks are 
+used to embed the imperative code within the otherwise declarative component. 
+This unnatural mix of imperative and declarative, however, creates additional 
+complexity (the tension between the two worlds, boilerplate code, etc.).
 
 ## The solution
 
