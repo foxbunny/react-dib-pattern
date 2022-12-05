@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <symbol id="fast-forward" viewBox="0 0 32 32">
+    <path
+      d="M15,12.617l0,-8.571l14,12l-14,12l0,-8.571l-10,8.571l0,-24l10,8.571Z"
+      fill="currentColor"/>
+  </symbol>
+  <symbol id="play-pause" viewBox="0 0 32 32">
+    <path d="M17,16.046l-14,12l-0,-24l14,12Z" fill="currentColor"/>
+    <rect x="19" y="4" width="4" height="24" fill="currentColor"/>
+    <rect x="25" y="4" width="4" height="24" fill="currentColor"/>
+  </symbol>
+  <symbol id="stop" viewBox="0 0 32 32">
+    <rect x="5" y="5" width="22" height="22" fill="currentColor"/>
+  </symbol>
+</svg>

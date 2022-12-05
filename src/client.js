@@ -6,90 +6,89 @@ let
   PAUSED = 1,
   PLAYING = 2,
   FAST_FORWARDING = 3,
-  REWINDING = 4,
   STATE_TRANSITIONS = { // valid state changes CURRENT -> NEXT -> OUTCOME
     [STOPPED]: {
-      [STOPPED]: STOPPED,
       [PLAYING]: PLAYING,
-      [FAST_FORWARDING]: STOPPED,
-      [REWINDING]: STOPPED,
     },
     [PAUSED]: {
       [STOPPED]: STOPPED,
       [PLAYING]: PLAYING,
-      [FAST_FORWARDING]: PAUSED,
-      [REWINDING]: PAUSED,
     },
     [PLAYING]: {
       [STOPPED]: STOPPED,
       [PLAYING]: PAUSED,
       [FAST_FORWARDING]: FAST_FORWARDING,
-      [REWINDING]: REWINDING,
     },
     [FAST_FORWARDING]: {
-      [STOPPED]: STOPPED,
-      [PLAYING]: PAUSED,
-      [FAST_FORWARDING]: FAST_FORWARDING,
-      [REWINDING]: REWINDING,
-    },
-    [REWINDING]: {
-      [STOPPED]: STOPPED,
-      [PLAYING]: PAUSED,
-      [FAST_FORWARDING]: FAST_FORWARDING,
-      [REWINDING]: REWINDING,
+      [PLAYING]: PLAYING,
     },
   },
-  initState = () => ({ mode: STOPPED, position: 0 }),
-  setPosition = (state, position) => ({ ...state, position }),
-  setPlaybackMode = (state, mode) => ({ ...state, mode: STATE_TRANSITIONS[state.mode][mode] })
+  initState = () => ({ mode: STOPPED, position: 0, duration: 0 }),
+  setDuration = duration => state => ({ ...state, duration }),
+  setPosition = position => state => ({ ...state, position }),
+  setPlaybackMode = mode => state => ({ ...state, mode: STATE_TRANSITIONS[state.mode][mode] ?? STOPPED })
 
 let
+  Icon = ({ label, iconId }) => (
+    <svg aria-label={label} viewBox="0 0 32 32">
+      <use href={`icons.svg#${iconId}`}></use>
+    </svg>
+  ),
   App = () => {
     let [state, setState] = useState(initState())
 
     let
-      onUpdatePosition = ev =>
-        setState(state => setPosition(state, ev.target.position)),
-      onPlayPause = () =>
-        setState(state => setPlaybackMode(state, PLAYING)),
-      onStop = () =>
-        setState(state => setPlaybackMode(state, STOPPED)),
-      onFastForward = () => {
-        if (state.mode) setState(state => setPlaybackMode(state, FAST_FORWARDING))
-      },
-      onRewind = () => {
-        if (state.mode) setState(state => setPlaybackMode(state, REWINDING))
-      }
+      onReady = ev => setState(setDuration(ev.target.duration)),
+      onUpdatePosition = ev => setState(setPosition(ev.target.currentTime)),
+      onEnded = ev => setState(setPlaybackMode(STOPPED)),
+      onPlayPause = () => setState(setPlaybackMode(PLAYING)),
+      onFastForward = () => state.mode && setState(setPlaybackMode(FAST_FORWARDING)),
+      onStop = () => setState(setPlaybackMode(STOPPED))
 
     return (
-      <article>
-        <react-audio playback-state={state.mode} onChange={onUpdatePosition}>
-          <audio src="drunk.mp3"></audio>
+      <section hidden={!state.duration}>
+        <react-audio playback-state={state.mode}>
+          <audio
+            onTimeUpdate={onUpdatePosition}
+            onEnded={onEnded}
+            onLoadedData={onReady}
+            src="drunk.mp3"></audio>
         </react-audio>
 
-        <fieldset>
-          <button onClick={onRewind}>Rewind</button>
-          <button onClick={onPlayPause}>Play/pause</button>
-          <button onClick={onFastForward}>Fast forward</button>
-          <button onClick={onStop}>Stop</button>
-        </fieldset>
-      </article>
+        <article id="player">
+          <div
+            id="progress"
+            role="progressbar"
+            aria-valuemax={state.duration}
+            aria-valuenow={state.position}
+            style={{'--position': `${state.position / state.duration * 100}%`}}></div>
+
+          <div id="controls">
+            <fieldset>
+              <button onClick={onPlayPause} aria-pressed={state.mode !== STOPPED}>
+                <Icon label="play and pause" iconId="play-pause"/>
+              </button>
+              <button onPointerDown={onFastForward}
+                      onPointerUp={onPlayPause}
+                      disabled={state.mode !== PLAYING}>
+                <Icon label="fast forward" iconId="fast-forward"/>
+              </button>
+              <button onClick={onStop}>
+                <Icon label="stop" iconId="stop"/>
+              </button>
+            </fieldset>
+            <span role="status" aria-live="polite">
+              <span id="pause-indicator"
+                    data-active={state.mode === PAUSED}>{state.mode === PAUSED ? 'paused' : 'not paused'}</span>
+              pause
+            </span>
+          </div>
+        </article>
+      </section>
     )
   }
 
 customElements.define('react-audio', class extends HTMLElement {
-  constructor() {
-    super()
-
-    Object.defineProperty(this, 'position', {
-      get() { return this.firstElementChild?.currentTime ?? 0 },
-    })
-    Object.defineProperty(this, 'playbackState', {
-      get() { return Number(this.getAttribute('playback-state')) || STOPPED },
-      set(x) { this.setAttribute('playback-state', x) },
-    })
-  }
-
   static get observedAttributes() { return ['playback-state'] }
 
   attributeChangedCallback(name) {
@@ -101,12 +100,10 @@ customElements.define('react-audio', class extends HTMLElement {
   }
 
   updatePlaybackState() {
-    if (!this.firstElementChild) return
-    switch (this.playbackState) {
+    switch (Number(this.getAttribute('playback-state')) || STOPPED) {
       case STOPPED: // stop
         this.firstElementChild.pause()
         this.firstElementChild.currentTime = 0
-        this.dispatchEvent(new Event('change'))
         break
       case PLAYING: // play
         this.firstElementChild.playbackRate = 1
@@ -117,9 +114,6 @@ customElements.define('react-audio', class extends HTMLElement {
         break
       case FAST_FORWARDING:
         this.firstElementChild.playbackRate = 3
-        break
-      case REWINDING:
-        this.firstElementChild.playbackRate = -3
         break
     }
   }
